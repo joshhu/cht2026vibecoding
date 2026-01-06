@@ -35,6 +35,10 @@
 6. Claude Code 的基礎/進階使用
 7. Claude Code 開發各種專案
 
+## 投影片網址
+
+1. https://reurl.cc/dqAWG6
+
 ## 上課地點
 
 使用 Microsoft Teams 進行線上上課，請使用 Microsoft Teams 加入課程。
