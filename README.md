@@ -42,11 +42,8 @@
 ## 上課地點
 
 使用 Microsoft Teams 進行線上上課，請使用 Microsoft Teams 加入課程。
-https://reurl.cc/bNAnav
 
 **請在課程開始前 10 分鐘加入。**
-
-![Teams 連結](teams.png)
 
 ## 上課日期
 
