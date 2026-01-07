@@ -6,7 +6,7 @@
 
 ## 注意事項
 
-1. 程式問題提問，請在[Issues](https://github.com/joshhu/cht2026vibecoding)上提問，並且提供程式碼，錯誤訊息，以及問題描述。提問時請使用標準 Markdown 格式
+1. 程式問題提問，請在[Issues](https://github.com/joshhu/cht2026vibecoding/issues)上提問，並且提供程式碼，錯誤訊息，以及問題描述。提問時請使用標準 Markdown 格式
 
 2. 本課程Slido互動平台：(https://app.sli.do/event/tqEjKVsiFjujSJeN22Xkp1)
 
