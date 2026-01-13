@@ -4,6 +4,9 @@
 
 有關本課程的更新事項會在這邊列出。
 
+1、2026/01/07 課程的投影片放在 Slieds/Course01 目錄下，PDF 格式
+2、2026/01/14 課程的投影片放在 Slieds/Course02 目錄下，PPTX 格式
+
 ## 注意事項
 
 1. 程式問題提問，請在[Issues](https://github.com/joshhu/cht2026vibecoding/issues)上提問，並且提供程式碼，錯誤訊息，以及問題描述。提問時請使用標準 Markdown 格式
@@ -34,10 +37,6 @@
 5. Cursor 開發各種專案
 6. Claude Code 的基礎/進階使用
 7. Claude Code 開發各種專案
-
-## 投影片網址
-
-1. https://reurl.cc/dqAWG6
 
 ## 上課地點
 
