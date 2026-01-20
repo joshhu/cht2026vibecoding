@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 全球旅遊照產生器 (Nano Banana Edition)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS & JS (OpenStreetMap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f4f8;
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            z-index: 10;
+            border-radius: 0.75rem;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-plane-departure text-blue-600 text-2xl"></i>
+                <h1 class="text-xl font-bold text-gray-800">AI 環遊世界 (Nano Banana Pro)</h1>
+            </div>
+            <button onclick="toggleApiKeyModal()" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition">
+                <i class="fa-solid fa-key mr-2"></i>設定 API Key
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Left Column: Controls -->
+        <div class="space-y-6">
+            
+            <!-- Step 1: Select Location -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-lg font-bold mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+                    選擇旅遊地點
+                </h2>
+                
+                <!-- Search Bar -->
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="search-input" placeholder="搜尋地點 (例如: 聖母峰、東京鐵塔)..." 
+                           class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                           onkeypress="handleSearchKey(event)">
+                    <button onclick="searchLocation()" id="search-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fa-solid fa-search"></i>
+                    </button>
+                </div>
+
+                <div class="mb-3">
+                    <p class="text-sm text-gray-500 mb-2">或直接點擊地圖選擇：</p>
+                    <div id="map" class="shadow-inner border border-gray-200"></div>
+                </div>
+                
+                <!-- Location Info Box -->
+                <div class="bg-blue-50 p-3 rounded-lg space-y-2">
+                    <!-- Address -->
+                    <div class="flex items-start">
+                        <i class="fa-solid fa-location-dot text-blue-500 mt-1 mr-3"></i>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-500">目前選定位置</p>
+                            <p id="location-name" class="font-medium text-gray-800">尚未選擇地點</p>
+                        </div>
+                    </div>
+                    <!-- Weather -->
+                    <div id="weather-info" class="flex items-center hidden border-t border-blue-100 pt-2">
+                        <i id="weather-icon" class="fa-solid fa-cloud text-blue-400 mr-3 text-lg"></i>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-500">當地即時天氣</p>
+                            <p id="weather-text" class="font-medium text-gray-800">載入中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Upload Photo -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-lg font-bold mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+                    上傳你的照片
+                </h2>
+                <div class="flex flex-col items-center justify-center w-full">
+                    <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition relative overflow-hidden">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6 z-10" id="upload-placeholder">
+                            <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.01 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p class="text-sm text-gray-500"><span class="font-semibold">點擊上傳</span> 或拖曳照片至此</p>
+                        </div>
+                        <img id="user-preview" class="absolute inset-0 w-full h-full object-cover hidden opacity-50" />
+                        <input id="dropzone-file" type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event)" />
+                    </label>
+                </div>
+            </div>
+
+            <!-- Step 3: Generate -->
+            <button onclick="startGeneration()" id="generate-btn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                開始生成 4K 旅遊照
+            </button>
+
+        </div>
+
+        <!-- Right Column: Result -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px] flex flex-col">
+            <h2 class="text-lg font-bold mb-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="bg-green-100 text-green-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">3</span>
+                    生成結果
+                </div>
+                <button id="download-btn" onclick="downloadImage()" class="hidden text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    <i class="fa-solid fa-download mr-1"></i> 下載圖片
+                </button>
+            </h2>
+
+            <div id="result-container" class="flex-1 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center relative overflow-hidden group">
+                
+                <!-- Initial State -->
+                <div id="initial-state" class="text-center p-8">
+                    <i class="fa-regular fa-image text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-400">照片將會顯示在這裡</p>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loading-state" class="hidden flex flex-col items-center">
+                    <div class="loader mb-4"></div>
+                    <p class="text-gray-600 font-medium animate-pulse">Nano Banana Pro 正在運算中...</p>
+                    <p class="text-xs text-gray-400 mt-2">正在分析地點與融合人物特徵</p>
+                </div>
+
+                <!-- Result Image -->
+                <img id="final-image" class="hidden w-full h-auto object-contain shadow-md rounded-lg transition duration-500" alt="Generated Travel Photo">
+                
+            </div>
+            
+            <div class="mt-4 text-xs text-gray-400 text-center">
+                * 本程式使用 Gemini API 生成，結果僅供娛樂。
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="api-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all scale-100">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">設定 Gemini API Key</h3>
+            <p class="text-sm text-gray-600 mb-4">
+                請輸入您的 Google Gemini API Key 以啟用功能。您的 Key 僅會儲存在您的瀏覽器本地端，不會被我們收集。
+                <br><a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-500 hover:underline text-xs">沒有 Key? 按此申請</a>
+            </p>
+            <input type="password" id="api-key-input" placeholder="貼上您的 API Key (AIzaSy...)" class="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+            <div class="flex justify-end space-x-2">
+                <button onclick="toggleApiKeyModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">取消</button>
+                <button onclick="saveApiKey()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-[70]">
+        Notification Message
+    </div>
+
+    <script>
+        // --- Configuration & State ---
+        let map;
+        let marker;
+        let selectedLocation = null;
+        let selectedWeather = null; // Store weather description for prompt
+        let userImageBase64 = null;
+        let userApiKey = localStorage.getItem('gemini_api_key') || '';
+
+        // Weather Code Map (WMO Code -> {Label, Icon, EnglishPrompt})
+        const weatherCodeMap = {
+            0: { label: '晴朗', icon: 'fa-sun', text: 'Clear sky, sunny' },
+            1: { label: '大致晴朗', icon: 'fa-cloud-sun', text: 'Mainly clear' },
+            2: { label: '多雲', icon: 'fa-cloud-sun', text: 'Partly cloudy' },
+            3: { label: '陰天', icon: 'fa-cloud', text: 'Overcast, cloudy' },
+            45: { label: '有霧', icon: 'fa-smog', text: 'Foggy' },
+            48: { label: '霧凇', icon: 'fa-smog', text: 'Depositing rime fog' },
+            51: { label: '小毛毛雨', icon: 'fa-cloud-rain', text: 'Light drizzle' },
+            53: { label: '毛毛雨', icon: 'fa-cloud-rain', text: 'Moderate drizzle' },
+            55: { label: '大毛毛雨', icon: 'fa-cloud-showers-heavy', text: 'Dense drizzle' },
+            61: { label: '小雨', icon: 'fa-cloud-rain', text: 'Slight rain' },
+            63: { label: '中雨', icon: 'fa-cloud-rain', text: 'Moderate rain' },
+            65: { label: '大雨', icon: 'fa-cloud-showers-heavy', text: 'Heavy rain' },
+            71: { label: '小雪', icon: 'fa-snowflake', text: 'Slight snow fall' },
+            73: { label: '中雪', icon: 'fa-snowflake', text: 'Moderate snow fall' },
+            75: { label: '大雪', icon: 'fa-snowflake', text: 'Heavy snow fall' },
+            80: { label: '陣雨', icon: 'fa-cloud-showers-heavy', text: 'Rain showers' },
+            95: { label: '雷雨', icon: 'fa-bolt', text: 'Thunderstorm' },
+            99: { label: '雷暴', icon: 'fa-bolt', text: 'Thunderstorm with heavy hail' }
+        };
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            if (!userApiKey) {
+                setTimeout(toggleApiKeyModal, 500); // Prompt for key if not present
+            } else {
+                document.getElementById('api-key-input').value = userApiKey;
+            }
+        });
+
+        // --- Map Logic (Leaflet + OpenStreetMap) ---
+        function initMap() {
+            // Default to Taipei, Taiwan
+            map = L.map('map').setView([25.0330, 121.5654], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            map.on('click', onMapClick);
+        }
+
+        // Click Handler (Reverse Geocoding + Weather)
+        async function onMapClick(e) {
+            const { lat, lng } = e.latlng;
+            updateMarker(e.latlng);
+            updateLocationAndWeather(lat, lng);
+        }
+
+        // Search Handler (Forward Geocoding + Weather)
+        async function searchLocation() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) return;
+
+            const btn = document.getElementById('search-btn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            try {
+                // Request address details to format the name consistently
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`);
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    const result = data[0];
+                    const lat = parseFloat(result.lat);
+                    const lng = parseFloat(result.lon);
+                    const latlng = { lat, lng };
+
+                    // Update Map View
+                    map.setView(latlng, 15);
+                    updateMarker(latlng);
+                    
+                    // Update Info
+                    updateLocationAndWeather(lat, lng, result);
+
+                } else {
+                    showToast('找不到該地點，請嘗試不同關鍵字');
+                }
+            } catch (e) {
+                console.error("Search error:", e);
+                showToast('搜尋時發生錯誤');
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        async function updateLocationAndWeather(lat, lng, existingData = null) {
+            // UI Loading State
+            document.getElementById('location-name').innerHTML = '<span class="animate-pulse text-gray-400">正在查詢地名...</span>';
+            const weatherInfo = document.getElementById('weather-info');
+            weatherInfo.classList.remove('hidden');
+            document.getElementById('weather-text').innerHTML = '<span class="animate-pulse text-gray-400">查詢天氣中...</span>';
+
+            // 1. Get Location Name
+            let placeName = "未命名地點";
+            try {
+                if (existingData) {
+                    placeName = formatLocationName(existingData);
+                } else {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+                    const data = await response.json();
+                    placeName = formatLocationName(data);
+                }
+                selectedLocation = placeName;
+                document.getElementById('location-name').innerText = placeName;
+            } catch (error) {
+                console.error("Geocoding error:", error);
+                selectedLocation = `座標 (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                document.getElementById('location-name').innerText = selectedLocation;
+            }
+
+            // 2. Get Weather (Open-Meteo)
+            try {
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`);
+                const weatherData = await weatherRes.json();
+                
+                if (weatherData.current_weather) {
+                    const { temperature, weathercode } = weatherData.current_weather;
+                    const codeInfo = weatherCodeMap[weathercode] || { label: '未知', icon: 'fa-circle-question', text: 'Unknown weather' };
+                    
+                    // Update UI
+                    document.getElementById('weather-text').innerText = `${codeInfo.label}, ${temperature}°C`;
+                    const iconEl = document.getElementById('weather-icon');
+                    iconEl.className = `fa-solid ${codeInfo.icon} text-blue-400 mr-3 text-lg`;
+                    
+                    // Store for prompt
+                    selectedWeather = `${codeInfo.text}, Temperature around ${temperature}°C`;
+                }
+            } catch (error) {
+                console.error("Weather error:", error);
+                document.getElementById('weather-text').innerText = "無法取得天氣";
+                selectedWeather = "Sunny and clear sky"; // Fallback default
+            }
+        }
+
+        // Helper: Format Location Name intelligently
+        function formatLocationName(data) {
+            if (!data.address) return data.display_name;
+
+            const addr = data.address;
+            const significant = addr.tourism || addr.amenity || addr.building || addr.leisure || addr.natural || addr.landmark || addr.road;
+            const city = addr.city || addr.town || addr.county || addr.state || '';
+            const country = addr.country || '';
+
+            // If we found a specific landmark name (e.g., Eiffel Tower)
+            if (significant) {
+                return `${country} ${city} ${significant}`;
+            }
+            // Fallback to simpler format
+            if (city) {
+                return `${country} ${city}`;
+            }
+            return data.display_name.split(',')[0]; // Just take the first part if all else fails
+        }
+
+        function updateMarker(latlng) {
+            if (marker) {
+                marker.setLatLng(latlng);
+            } else {
+                marker = L.marker(latlng).addTo(map);
+            }
+        }
+
+        function handleSearchKey(event) {
+            if (event.key === 'Enter') {
+                searchLocation();
+            }
+        }
+
+        // --- Image Upload Logic ---
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                userImageBase64 = e.target.result; // Keep the full data URI for preview
+                
+                // Show preview in dropzone
+                const previewImg = document.getElementById('user-preview');
+                previewImg.src = userImageBase64;
+                previewImg.classList.remove('hidden');
+                document.getElementById('upload-placeholder').classList.add('opacity-0');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- API Key Management ---
+        function toggleApiKeyModal() {
+            const modal = document.getElementById('api-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function saveApiKey() {
+            const input = document.getElementById('api-key-input').value.trim();
+            if (input) {
+                userApiKey = input;
+                localStorage.setItem('gemini_api_key', userApiKey);
+                showToast('API Key 已儲存');
+                toggleApiKeyModal();
+            } else {
+                showToast('請輸入有效的 API Key');
+            }
+        }
+
+        // --- Core Generation Logic (Gemini API) ---
+        async function startGeneration() {
+            if (!userApiKey) {
+                showToast('請先設定 API Key');
+                toggleApiKeyModal();
+                return;
+            }
+            if (!selectedLocation) {
+                showToast('請先在地圖上選擇一個地點');
+                return;
+            }
+            if (!userImageBase64) {
+                showToast('請先上傳你的照片');
+                return;
+            }
+
+            // UI State: Loading
+            const btn = document.getElementById('generate-btn');
+            const initialState = document.getElementById('initial-state');
+            const loadingState = document.getElementById('loading-state');
+            const finalImage = document.getElementById('final-image');
+            const downloadBtn = document.getElementById('download-btn');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 生成中...';
+            initialState.classList.add('hidden');
+            finalImage.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            downloadBtn.classList.add('hidden');
+
+            try {
+                // Extract base64 data (remove data:image/png;base64, prefix)
+                const base64Data = userImageBase64.split(',')[1];
+                const mimeType = userImageBase64.split(';')[0].split(':')[1];
+
+                // Construct Prompt with Weather
+                const weatherPrompt = selectedWeather ? `The current weather at the location is ${selectedWeather}. The image MUST reflect this weather condition (lighting, sky, wet ground if raining, etc).` : "";
+
+                const prompt = `Generate a high-quality, photorealistic 4K travel photo. 
+                Place the person from the provided input image into the following location: ${selectedLocation}.
+                ${weatherPrompt}
+                The background should clearly show the landmarks or atmosphere of ${selectedLocation}. 
+                The person should look like they are enjoying a holiday there. 
+                Maintain the person's facial features and identity exactly.
+                Style: Professional travel photography, highly detailed, sharp focus.`;
+
+                // API Payload for Gemini 2.5 Flash Image Preview (Support text + image input)
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { 
+                                inlineData: {
+                                    mimeType: mimeType,
+                                    data: base64Data
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["TEXT", "IMAGE"], // Allow both so we can catch refusals
+                        // Note: For image generation/editing specifically, we rely on the model's capability
+                    }
+                };
+
+                // Using Gemini 2.5 Flash Image Preview which supports image inputs for generation tasks
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${userApiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`API Error: ${response.status} - ${errText}`);
+                }
+
+                const data = await response.json();
+                console.log("Gemini API Response:", data); // Log full response for debugging
+                
+                // Check if blocked by safety settings
+                if (data.candidates?.[0]?.finishReason === 'SAFETY') {
+                    throw new Error("圖片生成因安全原因被阻擋。請嘗試使用不同的照片或地點。");
+                }
+
+                // Parse response (Check for inlineData for image or text for refusal)
+                const parts = data.candidates?.[0]?.content?.parts;
+                let imageBase64 = null;
+                let textResponse = null;
+
+                if (parts) {
+                    // Find the part that contains the image
+                    const imagePart = parts.find(p => p.inlineData);
+                    const textPart = parts.find(p => p.text);
+                    
+                    if (imagePart) {
+                        imageBase64 = imagePart.inlineData.data;
+                    }
+                    if (textPart) {
+                        textResponse = textPart.text;
+                    }
+                }
+
+                if (imageBase64) {
+                    // Success
+                    finalImage.src = `data:image/png;base64,${imageBase64}`;
+                    finalImage.classList.remove('hidden');
+                    loadingState.classList.add('hidden');
+                    downloadBtn.classList.remove('hidden');
+                } else if (textResponse) {
+                    // Fallback if model returns text refusing or failing
+                    throw new Error(`生成失敗，模型回應: ${textResponse}`);
+                } else {
+                    throw new Error("無法生成圖片。API 回傳了空的候選結果，可能是內容過濾。");
+                }
+
+            } catch (error) {
+                console.error(error);
+                showToast('發生錯誤: ' + error.message);
+                initialState.classList.remove('hidden');
+                loadingState.classList.add('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> 再次生成';
+            }
+        }
+
+        // --- Utilities ---
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 5000); // Increased timeout for reading errors
+        }
+
+        function downloadImage() {
+            const img = document.getElementById('final-image');
+            const link = document.createElement('a');
+            link.download = `travel-photo-${new Date().getTime()}.png`;
+            link.href = img.src;
+            link.click();
+        }
+    </script>
+</body>
+</html>

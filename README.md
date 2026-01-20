@@ -6,6 +6,7 @@
 
 1、2026/01/07 課程的投影片放在 Slieds/Course01 目錄下，PDF 格式
 2、2026/01/14 課程的投影片放在 Slieds/Course02 目錄下，PPTX 格式
+3、2026/01/21 課程的投影片放在 Slieds/Course03 目錄下，PPTX 格式
 
 ## 注意事項
 
@@ -16,7 +17,7 @@
    <img src="slido.png" alt="Slido 連結" width="150">
 
 3. 本課程部分內容需要 Google Gemini API Key，金鑰名稱統一使用下列格式：
-    - Google Gemini 的API key：`GEMINI_API_KEY`
+   - Google Gemini 的API key：`GEMINI_API_KEY`
 
 ## 課前準備
 
@@ -32,7 +33,7 @@
 
 1. 大型語言模型的基礎知識
 2. Vibe Coding 的基礎知識和使用
-3. 利用現有的網頁工具進行 Vibe Coding 
+3. 利用現有的網頁工具進行 Vibe Coding
 4. Cursor 的基礎/進階使用
 5. Cursor 開發各種專案
 6. Claude Code 的基礎/進階使用
