@@ -27,6 +27,7 @@
 3. Cursor 帳號
 4. Claude Code 帳號或 Anthropic API Key
 5. Github帳號
+6. Google AI Pro 帳號
 
 ## 課程簡介
 
