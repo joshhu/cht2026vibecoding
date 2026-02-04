@@ -7,7 +7,7 @@
 1、2026/01/07 課程的投影片放在 Slieds/Course01 目錄下，PDF 格式  
 2、2026/01/14 課程的投影片放在 Slieds/Course02 目錄下，PPTX 格式  
 3、2026/01/21 課程的投影片放在 Slieds/Course03 目錄下，PPTX 格式  
-4、2026/01/28 課程的投影片放在 Slieds/Course04 目錄下，PPTX 格式
+4、2026/01/28 課程的投影片放在 Slieds/Course04 目錄下，PPTX 格式  
 5、2026/02/04 課程的投影片放在 Slieds/Course05 目錄下，PPTX 格式
 
 ## 注意事項
