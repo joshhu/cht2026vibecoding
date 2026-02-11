@@ -8,7 +8,8 @@
 2、2026/01/14 課程的投影片放在 Slieds/Course02 目錄下，PPTX 格式  
 3、2026/01/21 課程的投影片放在 Slieds/Course03 目錄下，PPTX 格式  
 4、2026/01/28 課程的投影片放在 Slieds/Course04 目錄下，PPTX 格式  
-5、2026/02/04 課程的投影片放在 Slieds/Course05 目錄下，PPTX 格式
+5、2026/02/04 課程的投影片放在 Slieds/Course05 目錄下，PPTX 格式  
+6、2026/02/11 課程的投影片放在 Slieds/Course06 目錄下，PPTX 格式
 
 ## 注意事項
 
@@ -37,8 +38,8 @@
 1. 大型語言模型的基礎知識
 2. Vibe Coding 的基礎知識和使用
 3. 利用現有的網頁工具進行 Vibe Coding
-4. Cursor 的基礎/進階使用
-5. Cursor 開發各種專案
+4. Antigravity 的基礎/進階使用
+5. Antigravity 開發各種專案
 6. Claude Code 的基礎/進階使用
 7. Claude Code 開發各種專案
 
